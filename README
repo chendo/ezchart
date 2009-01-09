@@ -1,13 +1,32 @@
 Ezchart
 =======
 
-Introduction goes here.
+A DSL for generating JSON for OFC2. Not complete/polished yet.
 
 
 Example
 =======
 
-Example goes here.
+graph = EzChart do
+		title "Foobar"
+		
+		bar do
+			text "Foo"
+			values [1,2,3,4,5]
+			colour '#ff0000'
+		end
+
+		y_axis do
+			min 0
+			max 100
+		end
+		
+		x_axis do
+			labels do
+				labels [5,4,3,2,1]
+			end
+		end
+	end
 
 
-Copyright (c) 2009 [name of plugin creator], released under the MIT license
+Copyright (c) 2009 Jack Chen, released under the MIT license

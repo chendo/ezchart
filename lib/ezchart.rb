@@ -1,8 +1,31 @@
 require 'json'
 
 module EzChart
+  def self.included(controller)
+    controller.send :include, Helper
+  end
+  module Helper
+    
+    def ezchart(path, width = 600, height = 350)
+      <<-EOS
+      <div id="ezchart_#{id = rand(100000)}"></div>
+      <script type="text/javascript">
+         swfobject.embedSWF(
+         "/open-flash-chart.swf","ezchart_#{id}",
+         "#{width}", "#{height}", "9.0.0", "expressInstall.swf",
+         {"data-file":"#{path}.json"} );
+       </script>
+       EOS
+    end
+  end
+  
   class JsonObject
     def initialize(*args, &block)
+      if (data = args.first).is_a? Hash
+        data.each do |k, v|
+          instance_variable_set("@#{k}", v)
+        end
+      end
       self.instance_eval(&block) if block_given?
     end
     
@@ -64,21 +87,21 @@ module EzChart
   
   class Labels < JsonObject
     attribute :steps, :rotate, :colour, :size, :labels
-    def initialize(*args, &block)
-      @labels = []
+    def initialize(data, &block)
+      @labels = data
       super
     end
     
-    def labels(data)
-      @labels = data
-    end
+    # def labels(data)
+    #   @labels = data
+    # end
   end
   
   class Axis < JsonObject
     attribute :stroke, :colour, :grid_colour, :labels, :min, :max, :offset
     
-    def labels(&block)
-      @labels = Labels.new(&block)
+    def labels(*args, &block)
+      @labels = Labels.new(*args, &block)
     end
     
   end
@@ -180,16 +203,16 @@ module EzChart
     
     %w(bar pie line line_dot line_hollow).each do |type|
       eval <<-EOS
-        def #{type}(&block)
-          @elements << #{type.classify}.new(&block)
+        def #{type}(*args, &block)
+          @elements << #{type.classify}.new(*args, &block)
         end
       EOS
     end
     
     %w(x_axis y_axis).each do |type|
       eval <<-EOS
-        def #{type}(&block)
-          @#{type} = #{"#{type}s".classify}.new(&block)
+        def #{type}(*args, &block)
+          @#{type} = #{"#{type}s".classify}.new(*args, &block)
         end
       EOS
     end
@@ -218,5 +241,7 @@ ActionController::Base.send(:instance_eval) do
   def EzChart(*args, &block)
     EzChart::Chart.new(*args, &block)
   end
+  helper EzChart::Helper
+  
 end
 
